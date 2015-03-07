@@ -1,6 +1,5 @@
 package com.ojha.lamport
 
-import com.ojha.lamport
 import org.scalatest.{FunSuite, Matchers}
 
 /**
@@ -21,7 +20,7 @@ class SystemSpec extends FunSuite with Matchers {
     val system = new System(List { process })
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluate()
+    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateLamportTimestamps()
 
     // then
     val expectedEvaluation = new EvaluatedProcess(1, List[Event](
@@ -52,7 +51,7 @@ class SystemSpec extends FunSuite with Matchers {
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluate()
+    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateLamportTimestamps()
 
     // then
     val process1Evaluated = new EvaluatedProcess(1, List[Event](
@@ -69,7 +68,7 @@ class SystemSpec extends FunSuite with Matchers {
     evaluatedProcesses(1) should be(process2Evaluated)
   }
 
-  test("example cat(fig3)") {
+  test("bigger example (fig3)") {
 
     // given
     val process1 = new Process(1, List[EventType](
@@ -100,23 +99,15 @@ class SystemSpec extends FunSuite with Matchers {
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluate()
-//
-//    // then
-//    val process1Evaluated = new EvaluatedProcess(1, List[Event](
-//      new Event(SendEvent(1), 1)
-//    ))
-//
-//    val process2Evaluated = new EvaluatedProcess(2, List[Event](
-//      new Event(ReceiveEvent(1), 2)
-//    ))
+    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateLamportTimestamps()
 
+    // then
     evaluatedProcesses.length should be(3)
 
-    println(evaluatedProcesses)
-//
-//    evaluatedProcesses(0) should be(process1Evaluated)
-//    evaluatedProcesses(1) should be(process2Evaluated)
+    evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,3,5,6))
+    evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }) should equal(List(2,3,4))
+    evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,7))
+
   }
 
 }

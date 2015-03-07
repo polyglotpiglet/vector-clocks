@@ -21,11 +21,10 @@ class System(processes: Seq[Process]) {
     lookupSender
   }
 
-  def evaluate(): Seq[EvaluatedProcess] = {
+  def evaluateLamportTimestamps(): Seq[EvaluatedProcess] = {
 
     // msg_id => event, index in process chain, process number
     val senderLookup: Map[Int, (EventType, Int, Process)] = generatedSenderLookup()
-
     var evaluatedProcesses: List[EvaluatedProcess] = List[EvaluatedProcess]()
 
     processes.foreach( p => {
@@ -35,11 +34,8 @@ class System(processes: Seq[Process]) {
       var events: List[Event] = List[Event]()
 
       process.eventChain.reverse.zipWithIndex.foreach{ case(e, i) => {
-
-        val index = numberOfEventsInProcess - i -1
-
+        val index = numberOfEventsInProcess - i - 1
         val lamportTimestamp = computeLamport(e, index, process, senderLookup)
-
         events = new Event(e, lamportTimestamp) :: events
       }}
 
