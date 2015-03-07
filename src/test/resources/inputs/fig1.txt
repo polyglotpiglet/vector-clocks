@@ -1,0 +1,16 @@
+P0:
+event
+send    M2
+event
+receive M3
+send    M4
+
+P1:
+receive M1
+receive M2
+send    M3
+
+P2:
+send    M1
+event
+receive M4
