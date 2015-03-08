@@ -1,15 +1,18 @@
-package com.ojha.lamport
+package com.ojha.timestamps
+
+import com.ojha.timestamps.datamodel
+import com.ojha.timestamps.datamodel._
 
 /**
  * Created by alexandra on 07/03/15.
  */
-class System(processes: Seq[Process]) {
+class VectorClockSystem(processes: Seq[datamodel.Process]) {
 
 
-  def generatedSenderLookup(): Map[Int, (EventType, Int, Process)] = {
+  def generatedSenderLookup(): Map[Int, (EventType, Int, datamodel.Process)] = {
 
     // event type, index in process chain, processid
-    var lookupSender = Map[Int, (EventType, Int, Process)]()
+    var lookupSender = Map[Int, (EventType, Int, datamodel.Process)]()
 
     processes.foreach(p => {
       p.eventChain.zipWithIndex.foreach {
@@ -21,10 +24,10 @@ class System(processes: Seq[Process]) {
     lookupSender
   }
 
-  def evaluateLamportTimestamps(): Seq[EvaluatedProcess] = {
+  def evaluateTimeStamps(): Seq[EvaluatedProcess] = {
 
     // msg_id => event, index in process chain, process number
-    val senderLookup: Map[Int, (EventType, Int, Process)] = generatedSenderLookup()
+    val senderLookup: Map[Int, (EventType, Int, datamodel.Process)] = generatedSenderLookup()
     var evaluatedProcesses: List[EvaluatedProcess] = List[EvaluatedProcess]()
 
     processes.foreach( p => {
@@ -46,19 +49,19 @@ class System(processes: Seq[Process]) {
   }
 
 
-  def basecase(eventType: EventType, process: Process, senderLookup: Map[Int, (EventType, Int, Process)]): Int = {
+  def basecase(eventType: EventType, process: datamodel.Process, senderLookup: Map[Int, (EventType, Int, datamodel.Process)]): Int = {
 
     eventType match {
       case LocalEvent => 1
       case SendEvent(x) => 1
       case ReceiveEvent(x) => {
-        val senderInfo: (EventType, Int, Process) = senderLookup(x)
+        val senderInfo: (EventType, Int, datamodel.Process) = senderLookup(x)
         1 + computeLamport(senderInfo._1, senderInfo._2, senderInfo._3, senderLookup)
       }
     }
   }
 
-  def computeLamport(eventType: EventType, index: Int, process: Process, senderLookup: Map[Int, (EventType, Int, Process)]): Int = {
+  def computeLamport(eventType: EventType, index: Int, process: datamodel.Process, senderLookup: Map[Int, (EventType, Int, datamodel.Process)]): Int = {
 
     if (index == 0) return basecase(eventType, process, senderLookup)
 
@@ -68,10 +71,10 @@ class System(processes: Seq[Process]) {
       case LocalEvent => 1 + computeLamport(prevEventInSameProcess, index - 1, process, senderLookup)
       case SendEvent(x) => 1 + computeLamport(prevEventInSameProcess, index - 1, process, senderLookup)
       case ReceiveEvent(x) => {
-        val senderInfo: (EventType, Int, Process) = senderLookup(x)
+        val senderInfo: (EventType, Int, datamodel.Process) = senderLookup(x)
         val senderLamport = computeLamport(senderInfo._1, senderInfo._2, senderInfo._3, senderLookup)
-        
-        val prevInChain = computeLamport(prevEventInSameProcess, index - 1, process, senderLookup) 
+
+        val prevInChain = computeLamport(prevEventInSameProcess, index - 1, process, senderLookup)
         math.max(senderLamport, prevInChain) + 1
       }
     }

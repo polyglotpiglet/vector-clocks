@@ -1,6 +1,4 @@
-package com.ojha.lamport
-
-import scala.collection.mutable
+package com.ojha.timestamps.datamodel
 
 /**
  * Created by alexandra on 07/03/15.

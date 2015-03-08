@@ -1,4 +1,4 @@
-package com.ojha.lamport
+package com.ojha.timestamps.datamodel
 
 /**
  * Created by alexandra on 07/03/15.
