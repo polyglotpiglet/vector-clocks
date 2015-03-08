@@ -11,7 +11,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
   test("simple chain of local events in one process (fig1)") {
 
     // given
-    val process = new Process(1, List[EventType](
+    val process = new ProcessEventChain(1, List[EventType](
       LocalEvent,
       LocalEvent,
       LocalEvent,
@@ -21,58 +21,44 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
     val system = new LamportTimestampSystem(List { process })
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateTimeStamps()
+    val evaluatedProcesses = system.evaluateTimeStamps()
 
     // then
-    val expectedEvaluation = new EvaluatedProcess(1, List[Event](
-      new Event(LocalEvent, 1),
-      new Event(LocalEvent, 2),
-      new Event(LocalEvent, 3),
-      new Event(LocalEvent, 4)
-    ))
 
-    evaluatedProcesses.length should be(1)
-    evaluatedProcesses(0) should be(expectedEvaluation)
+    val expected = Array(1,2,3,4)
+    evaluatedProcesses.size should be (1)
+    evaluatedProcesses(1) should be(expected)
   }
 
   test("sending 1 msg between 2 processes (fig2)") {
 
     // given
-    val process1 = new Process(1, List[EventType](
+    val process0 = new ProcessEventChain(0, List[EventType](
       SendEvent(1)
     ))
 
-    val process2 = new Process(2, List[EventType](
+    val process1 = new ProcessEventChain(1, List[EventType](
       ReceiveEvent(1)
     ))
 
-    val system = new LamportTimestampSystem(List[Process] (
-      process1,
-      process2
+    val system = new LamportTimestampSystem(List[ProcessEventChain] (
+      process0,
+      process1
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateTimeStamps()
+    val timestampsByProcess = system.evaluateTimeStamps()
 
-    // then
-    val process1Evaluated = new EvaluatedProcess(1, List[Event](
-      new Event(SendEvent(1), 1)
-    ))
+    timestampsByProcess.size should be(2)
 
-    val process2Evaluated = new EvaluatedProcess(2, List[Event](
-      new Event(ReceiveEvent(1), 2)
-    ))
-
-    evaluatedProcesses.length should be(2)
-
-    evaluatedProcesses(0) should be(process1Evaluated)
-    evaluatedProcesses(1) should be(process2Evaluated)
+    timestampsByProcess(0) should be(Array(1))
+    timestampsByProcess(1) should be(Array(2))
   }
 
   test("bigger example (fig3)") {
 
     // given
-    val process1 = new Process(1, List[EventType](
+    val process0 = new ProcessEventChain(0, List[EventType](
       LocalEvent,
       SendEvent(2),
       LocalEvent,
@@ -80,41 +66,45 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       SendEvent(4)
     ))
 
-    val process2 = new Process(2, List[EventType](
+    val process1 = new ProcessEventChain(1, List[EventType](
       ReceiveEvent(1),
       ReceiveEvent(2),
       SendEvent(3)
     ))
 
 
-    val process3 = new Process(3, List[EventType](
+    val process2 = new ProcessEventChain(2, List[EventType](
       SendEvent(1),
       LocalEvent,
       ReceiveEvent(4)
     ))
 
-    val system = new LamportTimestampSystem(List[Process] (
+    val system = new LamportTimestampSystem(List[ProcessEventChain] (
+      process0,
       process1,
-      process2,
-      process3
+      process2
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateTimeStamps()
+    val timestampsByProcess = system.evaluateTimeStamps()
 
     // then
-    evaluatedProcesses.length should be(3)
+ //    evaluatedProcesses.length should be(3)
 
-    evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,3,5,6))
-    evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }) should equal(List(2,3,4))
-    evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,7))
+//    evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,3,5,6))
+//    evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }) should equal(List(2,3,4))
+//    evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }) should equal(List(1,2,7))
+
+    timestampsByProcess(0) should be(Array(1,2,3,5,6))
+    timestampsByProcess(1) should be(Array(2,3,4))
+    timestampsByProcess(2) should be(Array(1,2,7))
 
   }
 
   test("q17") {
 
     // given
-    val process1 = new Process(1, List[EventType](
+    val process1 = new ProcessEventChain(1, List[EventType](
       SendEvent(1),
       ReceiveEvent(3),
       ReceiveEvent(5),
@@ -122,7 +112,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       SendEvent(8)
     ))
 
-    val process2 = new Process(2, List[EventType](
+    val process2 = new ProcessEventChain(2, List[EventType](
       LocalEvent,
       SendEvent(3),
       ReceiveEvent(2),
@@ -134,7 +124,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
     ))
 
 
-    val process3 = new Process(3, List[EventType](
+    val process3 = new ProcessEventChain(3, List[EventType](
       ReceiveEvent(3),
       SendEvent(2),
       SendEvent(6),
@@ -144,7 +134,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       ReceiveEvent(4)
     ))
 
-    val process4 = new Process(4, List[EventType](
+    val process4 = new ProcessEventChain(4, List[EventType](
       LocalEvent,
       ReceiveEvent(7),
       ReceiveEvent(6),
@@ -152,7 +142,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       SendEvent(10)
     ))
 
-    val system = new LamportTimestampSystem(List[Process] (
+    val system = new LamportTimestampSystem(List[ProcessEventChain] (
       process1,
       process2,
       process3,
@@ -160,20 +150,20 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateTimeStamps()
+    val evaluatedProcesses = system.evaluateTimeStamps()
 
     // then
 
-    println(evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(3).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(3).eventChain.map(e => { e.lamportTimestamp }))
   }
 
   test("q15") {
 
     // given
-    val process1 = new Process(1, List[EventType](
+    val process1 = new ProcessEventChain(1, List[EventType](
       SendEvent(1),
       LocalEvent,
       ReceiveEvent(7),
@@ -183,14 +173,14 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       ReceiveEvent(10)
     ))
 
-    val process2 = new Process(2, List[EventType](
+    val process2 = new ProcessEventChain(2, List[EventType](
       ReceiveEvent(3),
       SendEvent(6),
       SendEvent(7)
     ))
 
 
-    val process3 = new Process(3, List[EventType](
+    val process3 = new ProcessEventChain(3, List[EventType](
       ReceiveEvent(2),
       SendEvent(4),
       SendEvent(3),
@@ -202,7 +192,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       ReceiveEvent(6)
     ))
 
-    val process4 = new Process(4, List[EventType](
+    val process4 = new ProcessEventChain(4, List[EventType](
       SendEvent(2),
       ReceiveEvent(4),
       ReceiveEvent(5),
@@ -211,7 +201,7 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
       SendEvent(10)
     ))
 
-    val system = new LamportTimestampSystem(List[Process] (
+    val system = new LamportTimestampSystem(List[ProcessEventChain] (
       process1,
       process2,
       process3,
@@ -219,14 +209,14 @@ class LamportTimestampSystemSpec extends FunSuite with Matchers {
     ))
 
     // when
-    val evaluatedProcesses: Seq[EvaluatedProcess] = system.evaluateTimeStamps()
+    val evaluatedProcesses = system.evaluateTimeStamps()
 
     // then
 
-    println(evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }))
-    println(evaluatedProcesses(3).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(0).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(1).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(2).eventChain.map(e => { e.lamportTimestamp }))
+//    println(evaluatedProcesses(3).eventChain.map(e => { e.lamportTimestamp }))
   }
 
 }
