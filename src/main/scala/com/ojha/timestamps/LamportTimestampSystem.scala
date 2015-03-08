@@ -9,35 +9,23 @@ class LamportTimestampSystem(processes: Seq[ProcessEventChain]) {
 
 
   def generateEmptyTimelines(): Map[Int, Array[Int]] = {
-
-    var returnTimelines = Map[Int, Array[Int]]()
-
-    processes.foreach(p => {
-      returnTimelines += (p.id -> new Array[Int](p.eventChain.length))
-    })
-
-    returnTimelines
+    processes.map(p => p.id -> new Array[Int](p.eventChain.length)).toMap
   }
 
-  def generatedSenderLookup(): Map[Int, (EventType, Int, ProcessEventChain)] = {
+  def generatedSenderLookup(): Map[Int, (ProcessEventChain, Int)] = {
 
-    // event type, index in process chain, processid
-    var lookupSender = Map[Int, (EventType, Int, ProcessEventChain)]()
+    val eventIndexInProcess = processes.flatMap(p => p.eventChain.zipWithIndex.map(x => (x._1, x._2, p)))
 
-    processes.foreach(p => {
-      p.eventChain.zipWithIndex.foreach {
-        case (SendEvent(x), i) => lookupSender = lookupSender + (x -> (SendEvent(x), i, p))
-        case _ => // do nothing
-      }
-    })
-
-    lookupSender
+    eventIndexInProcess.flatMap {
+      case (SendEvent(x), i, p) => List(x -> (p, i))
+      case _ => Nil
+    }.toMap
   }
 
   def evaluateTimeStamps(): Map[Int, Array[Int]] = {
 
     // msg_id => event, index in process chain, process number
-    val senderLookup: Map[Int, (EventType, Int, datamodel.ProcessEventChain)] = generatedSenderLookup()
+    val senderLookup: Map[Int, (ProcessEventChain, Int)] = generatedSenderLookup()
     val processTimelines: Map[Int, Array[Int]] = generateEmptyTimelines()
 
     processes.foreach( p => {
@@ -47,29 +35,27 @@ class LamportTimestampSystem(processes: Seq[ProcessEventChain]) {
       p.eventChain.reverse.zipWithIndex.foreach{ case(e, i) => {
 
         val index = p.eventChain.length - i - 1
-        if (events(index) == 0) {
-          val lamportTimestamp = computeLamport(e, index, p, senderLookup)
-          events(index) = lamportTimestamp
-        }
+        val lamportTimestamp = computeLamport(e, index, p, senderLookup)
+        events(index) = lamportTimestamp
 
       }}
     })
     processTimelines
   }
 
-  def basecase(eventType: EventType, process: datamodel.ProcessEventChain, senderLookup: Map[Int, (EventType, Int, datamodel.ProcessEventChain)]): Int = {
+  def basecase(eventType: EventType, process: ProcessEventChain, senderLookup: Map[Int, (ProcessEventChain, Int)]): Int = {
 
     eventType match {
       case LocalEvent => 1
       case SendEvent(x) => 1
       case ReceiveEvent(x) => {
-        val senderInfo: (EventType, Int, datamodel.ProcessEventChain) = senderLookup(x)
-        1 + computeLamport(senderInfo._1, senderInfo._2, senderInfo._3, senderLookup)
+        val senderInfo= senderLookup(x)
+        1 + computeLamport(senderInfo._1.eventChain(senderInfo._2), senderInfo._2, senderInfo._1, senderLookup)
       }
     }
   }
 
-  def computeLamport(eventType: EventType, index: Int, process: datamodel.ProcessEventChain, senderLookup: Map[Int, (EventType, Int, datamodel.ProcessEventChain)]): Int = {
+  def computeLamport(eventType: EventType, index: Int, process: datamodel.ProcessEventChain, senderLookup: Map[Int, (ProcessEventChain, Int)]): Int = {
 
     if (index == 0) return basecase(eventType, process, senderLookup)
 
@@ -79,14 +65,12 @@ class LamportTimestampSystem(processes: Seq[ProcessEventChain]) {
       case LocalEvent => 1 + computeLamport(prevEventInSameProcess, index - 1, process, senderLookup)
       case SendEvent(x) => 1 + computeLamport(prevEventInSameProcess, index - 1, process, senderLookup)
       case ReceiveEvent(x) => {
-        val senderInfo: (EventType, Int, datamodel.ProcessEventChain) = senderLookup(x)
-        val senderLamport = computeLamport(senderInfo._1, senderInfo._2, senderInfo._3, senderLookup)
+        val senderInfo: (ProcessEventChain, Int) = senderLookup(x)
+        val senderLamport = computeLamport(senderInfo._1.eventChain(senderInfo._2), senderInfo._2, senderInfo._1, senderLookup)
         
         val prevInChain = computeLamport(prevEventInSameProcess, index - 1, process, senderLookup) 
         math.max(senderLamport, prevInChain) + 1
       }
     }
-
   }
-
 }

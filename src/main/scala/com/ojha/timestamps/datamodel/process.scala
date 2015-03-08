@@ -6,5 +6,3 @@ package com.ojha.timestamps.datamodel
 case class ProcessEventChain(id: Int, eventChain: Seq[EventType])
 case class ProcessTimeline(id: Int, clockSequence: Array[Int])
 
-case class EvaluatedProcess(processId: Int, eventChain: Seq[Event])
-

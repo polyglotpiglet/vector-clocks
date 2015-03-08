@@ -5,6 +5,8 @@ package com.ojha.timestamps.datamodel
  */
 case class Event(eventType: EventType, lamportTimestamp: Int)
 
+case class EvaluatedProcess(processId: Int, timestamps: Seq[Event])
+
 trait EventType
 case object LocalEvent extends EventType
 case class SendEvent(messageId: Int) extends EventType

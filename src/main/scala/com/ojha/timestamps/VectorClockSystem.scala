@@ -1,6 +1,5 @@
 package com.ojha.timestamps
 
-import com.ojha.timestamps.datamodel
 import com.ojha.timestamps.datamodel._
 
 /**
