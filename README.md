@@ -6,4 +6,6 @@ Lots of duplicate computation, code kind of embarrassing but I needed to rush it
 
 Usage should be clear from the tests. 
 
+![](https://github.com/polyglotpiglet/vector-clocks/blob/master/figs/Fig3.png)
+
 
