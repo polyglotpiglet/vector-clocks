@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 /**
  * Created by alexandra on 07/03/15.
  */
-class LamportEvaluatorSystemSpec extends FunSuite with Matchers {
+class LamportEvaluatorSpec extends FunSuite with Matchers {
 
   def getTimeStamps(process: ResolvedCatProcess) = {
     process.events.map {

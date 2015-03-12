@@ -49,7 +49,7 @@ class LamportEvaluator {
         val timestampInMsg = calculateEventTimestamp(senderInfo._1, senderInfo._2, senderLookup)
         val prevInProcessChain = calculateEventTimestamp(process, index - 1, senderLookup)
         val newTimestamp = 1 + math.max(timestampInMsg._2.value, prevInProcessChain._2.value)
-        return (event, new CatLamportTimeStamp(newTimestamp))
+        (event, new CatLamportTimeStamp(newTimestamp))
       }
     }
   }

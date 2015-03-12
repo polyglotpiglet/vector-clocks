@@ -6,3 +6,4 @@ package com.ojha.timestamps.datamodel
 
 trait CatTimestamp
 case class CatLamportTimeStamp(value: Int) extends CatTimestamp
+case class CatVectorClock(vector: Array[Int]) extends CatTimestamp
